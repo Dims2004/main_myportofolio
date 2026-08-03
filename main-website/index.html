@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Portfolio | Beranda</title>
+
+    <!-- Meta Tags untuk Mobile -->
+    <meta name="theme-color" content="#6C63FF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/animation.css">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Firebase (SDK versi compat, tanpa perlu build tool) -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <script>if(localStorage.getItem("theme")==="dark"){document.body.classList.add("dark-mode");}</script>
+
+    <!-- ===== NAVBAR ===== -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <a href="index.html"><i class="fas fa-code"></i> MyPortfolio</a>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="active">Beranda</a></li>
+                <li><a href="about.html">Tentang</a></li>
+                <li><a href="projects.html">Proyek</a></li>
+                <li><a href="contact.html">Kontak</a></li>
+            </ul>
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <div class="hamburger" id="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Navbar Overlay -->
+    <div class="nav-overlay" id="navOverlay"></div>
+
+    <!-- ===== HERO SECTION ===== -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1>Halo, Saya <span class="highlight" id="heroName">...</span></h1>
+                    <h2>Seorang <span class="typewriter" id="typewriter"></span></h2>
+                    <p id="heroDescription">Memuat...</p>
+                    <div class="hero-buttons">
+                        <a href="projects.html" class="btn btn-primary">Lihat Proyek</a>
+                        <a href="contact.html" class="btn btn-secondary">Hubungi Saya</a>
+                    </div>
+
+                    <!-- Social Links -->
+                    <div class="social-links" id="heroSocial"></div>
+                </div>
+                <div class="hero-image">
+                    <img id="heroImage" src="assets/images/profile/Foto NonFormal.png" alt="Profile Photo">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== SKILLS SECTION ===== -->
+    <section class="skills">
+        <div class="container">
+            <h2 class="section-title">Keahlian Saya</h2>
+            <div class="skills-grid" id="skillsGrid"></div>
+        </div>
+    </section>
+
+    <!-- ===== FEATURED PROJECTS ===== -->
+    <section class="featured-projects">
+        <div class="container">
+            <h2 class="section-title">Proyek Unggulan</h2>
+            <div class="projects-grid" id="featuredProjectsGrid"></div>
+        </div>
+    </section>
+
+    <!-- ===== FOOTER ===== -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 MyPortfolio. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <!-- ===== SCRIPTS ===== -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/default-data.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/data-service.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/render-home.js"></script>
+</body>
+</html>

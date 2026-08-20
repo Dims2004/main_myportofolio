@@ -12,9 +12,16 @@
 
 // Ambil gambar (dari folder assets/ sendiri) lalu ubah jadi base64
 // supaya bisa ditempel ke PDF lewat doc.addImage().
-async function loadImageAsDataURL(url) {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error("Gagal memuat gambar: " + url);
+async function loadImageAsDataURL(rawUrl) {
+  // Ubah jadi URL absolut berdasarkan domain saat ini, supaya tidak
+  // salah resolve walau tombol PDF diklik dari halaman/pretty-URL berbeda
+  // (misal /projects vs /projects.html vs /projects/).
+  const absoluteUrl = new URL(rawUrl, window.location.href).href;
+
+  const response = await fetch(absoluteUrl);
+  if (!response.ok) {
+    throw new Error(`Gambar gagal dimuat (status ${response.status}): ${absoluteUrl}`);
+  }
   const blob = await response.blob();
   return await new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -161,9 +168,11 @@ async function generatePortfolioPDF() {
           imgData = await loadImageAsDataURL(project.image);
           imgFormat = getImageFormat(imgData);
         } catch (e) {
-          console.warn("Gambar proyek tidak bisa dimuat:", project.image, e);
+          console.error(`[PDF] Gambar proyek "${project.title}" gagal dimuat:`, e.message || e);
           imgData = null;
         }
+      } else {
+        console.warn(`[PDF] Proyek "${project.title}" tidak punya field image sama sekali.`);
       }
 
       // Hitung dulu deskripsi & teknologi sebelum menggambar,

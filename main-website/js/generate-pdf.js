@@ -10,25 +10,68 @@
 // - Semua proyek (gambar, judul, kategori, deskripsi, teknologi, link)
 // ============================================
 
-// Ambil gambar (dari folder assets/ sendiri) lalu ubah jadi base64
-// supaya bisa ditempel ke PDF lewat doc.addImage().
-async function loadImageAsDataURL(rawUrl) {
-  // Ubah jadi URL absolut berdasarkan domain saat ini, supaya tidak
-  // salah resolve walau tombol PDF diklik dari halaman/pretty-URL berbeda
-  // (misal /projects vs /projects.html vs /projects/).
-  const absoluteUrl = new URL(rawUrl, window.location.href).href;
+// ---------- Loader gambar (2 strategi, otomatis fallback) ----------
 
-  const response = await fetch(absoluteUrl);
-  if (!response.ok) {
-    throw new Error(`Gambar gagal dimuat (status ${response.status}): ${absoluteUrl}`);
-  }
-  const blob = await response.blob();
-  return await new Promise((resolve, reject) => {
+function blobToDataURL(blob) {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
+}
+
+// Strategi cadangan: muat lewat <img> + canvas. Kadang berhasil di kasus
+// di mana fetch() diblokir CORS tapi permintaan gambar biasa (GET sederhana)
+// tetap diizinkan oleh server/CDN gambar tersebut.
+function loadImageViaCanvas(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL("image/png"));
+      } catch (e) {
+        reject(new Error("Canvas gagal baca gambar (CORS diblokir server): " + e.message));
+      }
+    };
+    img.onerror = () => reject(new Error("Gagal memuat <img> (kemungkinan CORS diblokir server)"));
+    img.src = url;
+  });
+}
+
+async function loadImageAsDataURL(rawUrl) {
+  // Ubah jadi URL absolut berdasarkan domain saat ini, supaya tidak
+  // salah resolve walau tombol PDF diklik dari halaman/pretty-URL berbeda.
+  const absoluteUrl = new URL(rawUrl, window.location.href).href;
+
+  // Strategi 1: fetch (cara normal, cepat, cocok untuk gambar 1 domain sendiri)
+  try {
+    const response = await fetch(absoluteUrl, { mode: "cors" });
+    if (!response.ok) throw new Error(`status ${response.status}`);
+    const blob = await response.blob();
+    if (!blob.type.startsWith("image/")) {
+      throw new Error(`respons bukan file gambar (dapat: ${blob.type || "tidak diketahui"}) — cek apakah URL benar-benar mengarah ke file gambar`);
+    }
+    return await blobToDataURL(blob);
+  } catch (fetchErr) {
+    console.warn(`[PDF] fetch() gagal untuk ${absoluteUrl}:`, fetchErr.message || fetchErr);
+  }
+
+  // Strategi 2: fallback lewat <img> + canvas
+  try {
+    const data = await loadImageViaCanvas(absoluteUrl);
+    console.info(`[PDF] Berhasil dimuat lewat metode cadangan (canvas): ${absoluteUrl}`);
+    return data;
+  } catch (imgErr) {
+    console.error(`[PDF] Semua metode gagal memuat gambar ${absoluteUrl}:`, imgErr.message || imgErr);
+    throw imgErr;
+  }
 }
 
 function getImageFormat(dataUrl) {
@@ -139,7 +182,7 @@ async function generatePortfolioPDF() {
       const aboutText = site.aboutText || site.heroDescription;
       const lines = doc.splitTextToSize(aboutText, contentWidth);
       ensureSpace(lines.length * 5);
-      doc.text(lines, marginX, y);
+      doc.text(lines, marginX, y, { maxWidth: contentWidth, align: "justify" });
       y += lines.length * 5 + 6;
     }
 
@@ -168,7 +211,7 @@ async function generatePortfolioPDF() {
           imgData = await loadImageAsDataURL(project.image);
           imgFormat = getImageFormat(imgData);
         } catch (e) {
-          console.error(`[PDF] Gambar proyek "${project.title}" gagal dimuat:`, e.message || e);
+          console.error(`[PDF] Gambar proyek "${project.title}" gagal dimuat total:`, e.message || e);
           imgData = null;
         }
       } else {
@@ -229,11 +272,11 @@ async function generatePortfolioPDF() {
       doc.text(project.tag || project.category || "", marginX + contentWidth, textY, { align: "right" });
       textY += 6;
 
-      // ---- Deskripsi ----
+      // ---- Deskripsi (rata kanan-kiri / justify) ----
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9.8);
       doc.setTextColor(60, 60, 60);
-      doc.text(descLines, textX, textY);
+      doc.text(descLines, textX, textY, { maxWidth: textWidth, align: "justify" });
       textY += descLines.length * 4.6 + 2;
 
       // ---- Teknologi ----
